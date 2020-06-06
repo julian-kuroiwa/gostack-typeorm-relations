@@ -8,7 +8,7 @@ import {
 
 @Entity('customer')
 class Customer {
-  @PrimaryGeneratedColumn()
+  @PrimaryGeneratedColumn('uuid')
   id: string;
 
   @Column()
