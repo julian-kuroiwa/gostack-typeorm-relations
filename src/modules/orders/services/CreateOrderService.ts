@@ -34,35 +34,30 @@ class CreateProductService {
     const customer = await this.customersRepository.findById(customer_id);
 
     if (!customer) {
-      throw new AppError('Customer not found');
+      throw new AppError('This customer does not exist');
     }
 
-    const productsWithPrice = await this.productsRepository.findAllById(
-      products.map(product => ({ id: product.id })),
-    );
+    const productsId = products.map(product => {
+      return { id: product.id };
+    });
 
-    if (products.length !== productsWithPrice.length) {
-      throw new AppError('Product not found');
-    }
+    const productsData = await this.productsRepository.findAllById(productsId);
 
-    products.forEach(product => {
-      const databaseQuantity = productsWithPrice.find(
-        ({ id }) => id === product.id,
-      )?.quantity;
+    const productsFinal = productsData.map(productData => {
+      const productFinal = products.find(
+        productFind => productFind.id === productData.id,
+      );
 
-      if ((databaseQuantity || 0) < product.quantity) {
-        throw new AppError('Quantity invalid');
-      }
+      return {
+        product_id: productData.id,
+        price: productData.price,
+        quantity: productFinal?.quantity || 0,
+      };
     });
 
     const order = await this.ordersRepository.create({
       customer,
-      products: products.map(product => ({
-        product_id: product.id,
-        price:
-          productsWithPrice.find(({ id }) => id === product.id)?.price || 0,
-        quantity: product.quantity,
-      })),
+      products: productsFinal,
     });
 
     await this.productsRepository.updateQuantity(products);
